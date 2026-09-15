@@ -2,27 +2,28 @@ import React from 'react';
 import { descargarReportePDF } from '../services/api.js';
 
 function ReportesPage() {
-  const [fechaInicio, setFechaInicio] = React.useState('');
-  const [fechaFin, setFechaFin] = React.useState('');
-  const [numeroTarjeta, setNumeroTarjeta] = React.useState('');
+  const hoy = new Date();
+  const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+  const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split('T')[0];
+
+  const [fechaInicio, setFechaInicio] = React.useState(primerDia);
+  const [fechaFin, setFechaFin] = React.useState(ultimoDia);
   const [cargando, setCargando] = React.useState(false);
   const [error, setError] = React.useState(null);
 
   const descargarPDF = async (e) => {
     e.preventDefault();
+    if (!fechaInicio || !fechaFin) {
+      setError('Debe seleccionar ambas fechas para generar el reporte.');
+      return;
+    }
     setCargando(true);
     setError(null);
     try {
-      const filtros = {};
-      if (fechaInicio && fechaFin) {
-        filtros.fecha_inicio = fechaInicio;
-        filtros.fecha_fin = fechaFin;
-      }
-      if (numeroTarjeta) {
-        filtros.numero_tarjeta = numeroTarjeta;
-      }
-
-      const response = await descargarReportePDF(filtros);
+      const response = await descargarReportePDF({
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin
+      });
 
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -49,7 +50,7 @@ function ReportesPage() {
             REPORTE DE PAPELETAS
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Genera un PDF con todas las papeletas ingresadas al sistema
+            Genera un PDF con todas las papeletas del período seleccionado
           </p>
         </div>
 
@@ -73,19 +74,6 @@ function ReportesPage() {
                 onChange={(e) => setFechaFin(e.target.value)}
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="label-field">
-                Nº de tarjeta del trabajador (opcional)
-              </label>
-              <input
-                type="number"
-                min="1"
-                className="input-field"
-                placeholder="Ej: 1, 5, 12..."
-                value={numeroTarjeta}
-                onChange={(e) => setNumeroTarjeta(e.target.value)}
-              />
-            </div>
           </div>
 
           {error && (
@@ -98,9 +86,8 @@ function ReportesPage() {
             <button
               type="button"
               onClick={() => {
-                setFechaInicio('');
-                setFechaFin('');
-                setNumeroTarjeta('');
+                setFechaInicio(primerDia);
+                setFechaFin(ultimoDia);
                 setError(null);
               }}
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"

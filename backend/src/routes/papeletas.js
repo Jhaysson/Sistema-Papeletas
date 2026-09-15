@@ -79,7 +79,15 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM papeletas ORDER BY fecha_salida DESC');
+    const { fecha } = req.query;
+    let query = 'SELECT * FROM papeletas';
+    let params = [];
+    if (fecha) {
+      query += ' WHERE fecha_salida = ?';
+      params.push(fecha);
+    }
+    query += ' ORDER BY fecha_salida DESC';
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (error) {
     console.error('Error al obtener papeletas:', error);

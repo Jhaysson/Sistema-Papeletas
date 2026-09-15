@@ -2,31 +2,42 @@ import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import Encabezado from './components/Encabezado.jsx';
 import ReportesPage from './components/ReportesPage.jsx';
-import { registrarPapeleta } from './services/api.js';
+import { registrarPapeleta, obtenerPapeletas } from './services/api.js';
 
 const PAGINAS = {
   FORMULARIO: 'formulario',
   REPORTES: 'reportes'
 };
 
-function Navegacion({ paginaActual, cambiarPagina }) {
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+function Navegacion({ paginaActual, cambiarPagina, mostrarFormulario, setMostrarFormulario }) {
   return (
     <nav className="bg-blue-900 text-white shadow-md">
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
         <div className="font-bold tracking-wide text-lg">SIGA - Sistema de Papeletas</div>
         <div className="flex gap-2">
+          {!mostrarFormulario && paginaActual !== PAGINAS.REPORTES && (
+            <button
+              onClick={() => setMostrarFormulario(true)}
+              className="px-4 py-2 rounded text-sm font-medium transition bg-blue-600 hover:bg-blue-500"
+            >
+              Nueva Papeleta
+            </button>
+          )}
+          {mostrarFormulario && (
+            <button
+              onClick={() => setMostrarFormulario(false)}
+              className="px-4 py-2 rounded text-sm font-medium transition bg-gray-500 hover:bg-gray-400"
+            >
+              Volver
+            </button>
+          )}
           <button
-            onClick={() => cambiarPagina(PAGINAS.FORMULARIO)}
-            className={`px-4 py-2 rounded text-sm font-medium transition ${
-              paginaActual === PAGINAS.FORMULARIO
-                ? 'bg-white text-blue-900'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            Nueva Papeleta
-          </button>
-          <button
-            onClick={() => cambiarPagina(PAGINAS.REPORTES)}
+            onClick={() => { cambiarPagina(PAGINAS.REPORTES); setMostrarFormulario(false); }}
             className={`px-4 py-2 rounded text-sm font-medium transition ${
               paginaActual === PAGINAS.REPORTES
                 ? 'bg-white text-blue-900'
@@ -38,6 +49,157 @@ function Navegacion({ paginaActual, cambiarPagina }) {
         </div>
       </div>
     </nav>
+  );
+}
+
+function ListaPapeletas() {
+  const hoy = new Date();
+  const [dia, setDia] = React.useState(hoy.getDate());
+  const [mes, setMes] = React.useState(hoy.getMonth() + 1);
+  const [anio, setAnio] = React.useState(hoy.getFullYear());
+  const [papeletas, setPapeletas] = React.useState([]);
+  const [cargando, setCargando] = React.useState(false);
+  const [buscado, setBuscado] = React.useState(false);
+
+  const dias = Array.from({ length: 31 }, (_, i) => i + 1);
+  const anios = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
+
+  const buscar = async () => {
+    const fechaStr = `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    setCargando(true);
+    try {
+      const res = await obtenerPapeletas(fechaStr);
+      setPapeletas(res.data);
+    } catch {
+      setPapeletas([]);
+    } finally {
+      setCargando(false);
+      setBuscado(true);
+    }
+  };
+
+  const limpiar = () => {
+    setPapeletas([]);
+    setBuscado(false);
+  };
+
+  const motivoPapeleta = (p) => {
+    const motivos = [];
+    if (p.motivo_comision) motivos.push('Comisión');
+    if (p.motivo_personales) motivos.push('Personales');
+    if (p.motivo_otros) motivos.push(`Otros${p.motivo_otros_descripcion ? `: ${p.motivo_otros_descripcion}` : ''}`);
+    return motivos.join(', ') || '-';
+  };
+
+  return (
+    <div className="min-h-screen py-8">
+      <div className="max-w-5xl mx-auto bg-white shadow-lg p-8">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 tracking-wide">
+            PAPELETAS REGISTRADAS
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Consulte las papeletas por día
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4 mb-6 p-4 border border-gray-300 rounded bg-gray-50">
+          <div>
+            <label className="label-field">Día</label>
+            <select
+              className="input-field w-24"
+              value={dia}
+              onChange={(e) => setDia(Number(e.target.value))}
+            >
+              {dias.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label-field">Mes</label>
+            <select
+              className="input-field w-40"
+              value={mes}
+              onChange={(e) => setMes(Number(e.target.value))}
+            >
+              {MESES.map((m, i) => (
+                <option key={i + 1} value={i + 1}>{m}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label-field">Año</label>
+            <select
+              className="input-field w-28"
+              value={anio}
+              onChange={(e) => setAnio(Number(e.target.value))}
+            >
+              {anios.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={buscar}
+            disabled={cargando}
+            className="px-4 py-2 bg-blue-700 text-white rounded text-sm hover:bg-blue-800 disabled:opacity-50"
+          >
+            {cargando ? 'Buscando...' : 'Buscar'}
+          </button>
+          <button
+            onClick={limpiar}
+            className="px-4 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+          >
+            Limpiar
+          </button>
+        </div>
+
+        {buscado && papeletas.length === 0 && (
+          <div className="text-center text-gray-500 py-8 border border-dashed border-gray-300 rounded">
+            No hay papeletas registradas para esta fecha.
+          </div>
+        )}
+
+        {papeletas.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border border-gray-400 px-3 py-2">N° Tarjeta</th>
+                  <th className="border border-gray-400 px-3 py-2">Nombre y Apellidos</th>
+                  <th className="border border-gray-400 px-3 py-2">Oficina</th>
+                  <th className="border border-gray-400 px-3 py-2">Motivo</th>
+                  <th className="border border-gray-400 px-3 py-2">Hora Salida</th>
+                  <th className="border border-gray-400 px-3 py-2">Hora Retorno</th>
+                </tr>
+              </thead>
+              <tbody>
+                {papeletas.map((p) => (
+                  <tr key={p.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-400 px-3 py-2 text-center">{p.numero_tarjeta}</td>
+                    <td className="border border-gray-400 px-3 py-2">{p.nombre_apellidos}</td>
+                    <td className="border border-gray-400 px-3 py-2">{p.oficina}</td>
+                    <td className="border border-gray-400 px-3 py-2">{motivoPapeleta(p)}</td>
+                    <td className="border border-gray-400 px-3 py-2 text-center">{p.hora_salida}</td>
+                    <td className="border border-gray-400 px-3 py-2 text-center">{p.hora_retorno || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="text-sm text-gray-500 mt-2 text-right">
+              Total: {papeletas.length} papeleta{papeletas.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
+
+        {!buscado && (
+          <div className="text-center text-gray-400 py-8 border border-dashed border-gray-300 rounded">
+            Seleccione una fecha y presione "Buscar" para ver las papeletas.
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -240,7 +402,7 @@ function DetalleYFirmas({ register }) {
   );
 }
 
-function PapeletaForm() {
+function PapeletaForm({ onRegistrado }) {
   const { register, handleSubmit, reset, watch, control, setValue } = useForm({
     defaultValues: {
       establecimientos: []
@@ -262,6 +424,10 @@ function PapeletaForm() {
       await registrarPapeleta({ ...data, establecimientos: establecimientosFiltrados });
       setMensaje({ tipo: 'exito', texto: 'Papeleta registrada correctamente' });
       reset({ establecimientos: [] });
+      setTimeout(() => {
+        setMensaje(null);
+        onRegistrado();
+      }, 1500);
     } catch (error) {
       setMensaje({ tipo: 'error', texto: 'Error al registrar la papeleta' });
     } finally {
@@ -321,11 +487,23 @@ function PapeletaForm() {
 
 function App() {
   const [paginaActual, setPaginaActual] = React.useState(PAGINAS.FORMULARIO);
+  const [mostrarFormulario, setMostrarFormulario] = React.useState(false);
 
   return (
     <div>
-      <Navegacion paginaActual={paginaActual} cambiarPagina={setPaginaActual} />
-      {paginaActual === PAGINAS.FORMULARIO ? <PapeletaForm /> : <ReportesPage />}
+      <Navegacion
+        paginaActual={paginaActual}
+        cambiarPagina={setPaginaActual}
+        mostrarFormulario={mostrarFormulario}
+        setMostrarFormulario={setMostrarFormulario}
+      />
+      {paginaActual === PAGINAS.REPORTES && <ReportesPage />}
+      {paginaActual === PAGINAS.FORMULARIO && !mostrarFormulario && (
+        <ListaPapeletas />
+      )}
+      {paginaActual === PAGINAS.FORMULARIO && mostrarFormulario && (
+        <PapeletaForm onRegistrado={() => setMostrarFormulario(false)} />
+      )}
     </div>
   );
 }

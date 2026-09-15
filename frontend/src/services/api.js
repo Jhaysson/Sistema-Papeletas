@@ -6,7 +6,11 @@ const api = axios.create({
 
 export const registrarPapeleta = (datos) => api.post('/papeletas', datos);
 
-export const obtenerPapeletas = () => api.get('/papeletas');
+export const obtenerPapeletas = (fecha) => {
+  const params = {};
+  if (fecha) params.fecha = fecha;
+  return api.get('/papeletas', { params });
+};
 
 export const obtenerPapeleta = (id) => api.get(`/papeletas/${id}`);
 

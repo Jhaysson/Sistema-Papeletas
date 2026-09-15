@@ -5,7 +5,7 @@ import pool from '../config/db.js';
 const router = Router();
 
 router.get('/papeletas-pdf', async (req, res) => {
-  const { fecha_inicio, fecha_fin, numero_tarjeta } = req.query;
+  const { fecha_inicio, fecha_fin } = req.query;
 
   try {
     let query = `
@@ -20,11 +20,6 @@ router.get('/papeletas-pdf', async (req, res) => {
     if (fecha_inicio && fecha_fin) {
       query += ' AND p.fecha_salida BETWEEN ? AND ?';
       params.push(fecha_inicio, fecha_fin);
-    }
-
-    if (numero_tarjeta) {
-      query += ' AND p.numero_tarjeta = ?';
-      params.push(numero_tarjeta);
     }
 
     query += ' ORDER BY p.fecha_salida DESC, p.numero_tarjeta, e.numero';
@@ -95,9 +90,6 @@ function generarReporte(doc, papeletas, filtros) {
   doc.font('Helvetica').fontSize(10);
   if (filtros.fecha_inicio && filtros.fecha_fin) {
     doc.text(`Período: ${filtros.fecha_inicio} al ${filtros.fecha_fin}`, { align: 'center' });
-  }
-  if (filtros.numero_tarjeta) {
-    doc.text(`Nº de Tarjeta: ${filtros.numero_tarjeta}`, { align: 'center' });
   }
   doc.moveDown();
   doc.text(`Total de papeletas: ${papeletas.length}`, { align: 'right' });
