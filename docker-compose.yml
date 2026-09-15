@@ -1,0 +1,56 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: papeletas_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: sistema_papeletas
+      MYSQL_USER: papeletas_user
+      MYSQL_PASSWORD: papeletas_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: papeletas_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: papeletas_user
+      DB_PASSWORD: papeletas_password
+      DB_NAME: sistema_papeletas
+      PORT: 5000
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    container_name: papeletas_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  db_data:
