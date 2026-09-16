@@ -2,11 +2,13 @@ import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import Encabezado from './components/Encabezado.jsx';
 import ReportesPage from './components/ReportesPage.jsx';
+import ReportesAsistenciaPage from './components/ReportesAsistenciaPage.jsx';
 import { registrarPapeleta, obtenerPapeletas } from './services/api.js';
 
 const PAGINAS = {
   FORMULARIO: 'formulario',
-  REPORTES: 'reportes'
+  REPORTES: 'reportes',
+  REPORTES_ASISTENCIA: 'reportes_asistencia'
 };
 
 const MESES = [
@@ -20,9 +22,19 @@ function Navegacion({ paginaActual, cambiarPagina, mostrarFormulario, setMostrar
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
         <div className="font-bold tracking-wide text-lg">SIGA - Sistema de Papeletas</div>
         <div className="flex gap-2">
-          {!mostrarFormulario && paginaActual !== PAGINAS.REPORTES && (
+          <button
+            onClick={() => { cambiarPagina(PAGINAS.FORMULARIO); setMostrarFormulario(false); }}
+            className={`px-4 py-2 rounded text-sm font-medium transition ${
+              paginaActual === PAGINAS.FORMULARIO && !mostrarFormulario
+                ? 'bg-white text-blue-900'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            Papeletas
+          </button>
+          {!mostrarFormulario && (
             <button
-              onClick={() => setMostrarFormulario(true)}
+              onClick={() => { cambiarPagina(PAGINAS.FORMULARIO); setMostrarFormulario(true); }}
               className="px-4 py-2 rounded text-sm font-medium transition bg-blue-600 hover:bg-blue-500"
             >
               Nueva Papeleta
@@ -45,6 +57,16 @@ function Navegacion({ paginaActual, cambiarPagina, mostrarFormulario, setMostrar
             }`}
           >
             Reportes PDF
+          </button>
+          <button
+            onClick={() => { cambiarPagina(PAGINAS.REPORTES_ASISTENCIA); setMostrarFormulario(false); }}
+            className={`px-4 py-2 rounded text-sm font-medium transition ${
+              paginaActual === PAGINAS.REPORTES_ASISTENCIA
+                ? 'bg-white text-blue-900'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            Asistencia
           </button>
         </div>
       </div>
@@ -498,6 +520,7 @@ function App() {
         setMostrarFormulario={setMostrarFormulario}
       />
       {paginaActual === PAGINAS.REPORTES && <ReportesPage />}
+      {paginaActual === PAGINAS.REPORTES_ASISTENCIA && <ReportesAsistenciaPage />}
       {paginaActual === PAGINAS.FORMULARIO && !mostrarFormulario && (
         <ListaPapeletas />
       )}
