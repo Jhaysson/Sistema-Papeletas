@@ -40,14 +40,6 @@ function Navegacion({ paginaActual, cambiarPagina, mostrarFormulario, setMostrar
               Nueva Papeleta
             </button>
           )}
-          {mostrarFormulario && (
-            <button
-              onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 rounded text-sm font-medium transition bg-gray-500 hover:bg-gray-400"
-            >
-              Volver
-            </button>
-          )}
           <button
             onClick={() => { cambiarPagina(PAGINAS.REPORTES); setMostrarFormulario(false); }}
             className={`px-4 py-2 rounded text-sm font-medium transition ${
